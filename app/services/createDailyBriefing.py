@@ -279,7 +279,7 @@ def _build_task_summary(
         "title":          t.get("title", ""),
         "verb_hint":      _verb_hint(t.get("title", "")),
         "completed":      t.get("completed", False),   # guard rail: LLM must ignore completed tasks
-        "urgent":         t.get("urgent", False),
+        "priority":       t.get("priority"),
         "due_date":       str(t.get("due_date", ""))[:10] if t.get("due_date") else None,
         "due_time":       t.get("due_time") or None,
         "due_label":      _due_label(t, today_str, tomorrow_str),

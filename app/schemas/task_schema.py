@@ -9,7 +9,7 @@ class TaskBase(BaseModel):
     description: Optional[str] = None
     category: Optional[str] = None
     completed: bool = False
-    urgent: bool = False
+    priority: Optional[int] = None
 
     due_date: Optional[date] = None
     due_time: Optional[time] = None

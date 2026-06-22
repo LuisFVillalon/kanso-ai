@@ -43,7 +43,9 @@ def compute_task_weight(task) -> float:
     hours = float(task.estimated_time or 0.0)
     if hours <= 0:
         return 0.0
-    urgency_mult = URGENCY_WEIGHT_MULTIPLIER if getattr(task, "urgent", False) else 1.0
+    # Priority 1 is the most important; treat it like the old "urgent" flag
+    priority = getattr(task, "priority", None)
+    urgency_mult = URGENCY_WEIGHT_MULTIPLIER if priority == 1 else 1.0
     complexity_factor = COMPLEXITY_WEIGHT_MAP.get(getattr(task, "complexity", None) or 3, 1.0)
     return round(hours * urgency_mult * complexity_factor, 4)
 
