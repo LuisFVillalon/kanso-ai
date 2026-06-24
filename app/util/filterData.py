@@ -1,6 +1,6 @@
 from collections import defaultdict
 from datetime import date, timedelta
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from math import ceil
 
 # ── Workload constants ────────────────────────────────────────────────────────
@@ -15,15 +15,6 @@ MAX_SUBTASKS: int = 8
 # Urgent tasks feel heavier than their estimated_time alone suggests.
 URGENCY_WEIGHT_MULTIPLIER: float = 1.4
 
-# Complexity multiplier: a complexity-5 task costs 50% more load than complexity-1.
-COMPLEXITY_WEIGHT_MAP: Dict[int, float] = {
-    1: 0.70,
-    2: 0.85,
-    3: 1.00,
-    4: 1.20,
-    5: 1.50,
-}
-
 # How many days to spread the load of tasks that have no due_date.
 UNDATED_TASK_SPREAD_DAYS: int = 7
 
@@ -34,11 +25,9 @@ def compute_task_weight(task) -> float:
     """
     Return a float representing the *cognitive load* of a task.
 
-    Weight = estimated_time × urgency_multiplier × complexity_factor
+    Weight = estimated_time × urgency_multiplier
 
-    Using weight instead of raw hours gives the scheduler a more honest
-    picture: an urgent complexity-5 task at 2 h costs as much as a
-    relaxed complexity-1 task at ~4 h.
+    Priority-1 tasks carry a 1.4× multiplier to reflect their urgency.
     """
     hours = float(task.estimated_time or 0.0)
     if hours <= 0:
@@ -46,8 +35,7 @@ def compute_task_weight(task) -> float:
     # Priority 1 is the most important; treat it like the old "urgent" flag
     priority = getattr(task, "priority", None)
     urgency_mult = URGENCY_WEIGHT_MULTIPLIER if priority == 1 else 1.0
-    complexity_factor = COMPLEXITY_WEIGHT_MAP.get(getattr(task, "complexity", None) or 3, 1.0)
-    return round(hours * urgency_mult * complexity_factor, 4)
+    return round(hours * urgency_mult, 4)
 
 
 # ── Workload aggregation ──────────────────────────────────────────────────────
@@ -220,7 +208,7 @@ def schedule_durations(
     buffer_end: date,
     active_workload_by_day: Dict[str, float],
     daily_cap: float = DAILY_CAP_HOURS,
-    due_time_str: str = "11:59:34.000Z",
+    due_time_str: Optional[str] = None,
 ) -> List[Dict[str, Any]]:
     """
     Map each duration to a date in [start_date, buffer_end] without
