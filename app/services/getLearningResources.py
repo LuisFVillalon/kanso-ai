@@ -2,7 +2,6 @@ import asyncio
 import json
 import os
 import re
-import urllib.parse
 from typing import Any, Dict, List
 from urllib.parse import urlparse
 

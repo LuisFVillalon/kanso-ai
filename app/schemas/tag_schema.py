@@ -1,10 +1,9 @@
 from pydantic import BaseModel
-from typing import Optional
 
 
 class TagBase(BaseModel):
     name: str
-    color: Optional[str] = None
+    color: str | None = None
 
 
 class TagCreate(TagBase):
@@ -14,6 +13,4 @@ class TagCreate(TagBase):
 class Tag(TagBase):
     id: int
 
-    model_config = {
-        "from_attributes": True
-    }
+    model_config = {"from_attributes": True}

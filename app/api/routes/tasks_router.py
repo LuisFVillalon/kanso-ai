@@ -1,13 +1,13 @@
 import asyncio
+import os
+from typing import Any, Optional
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
+import httpx
+from dotenv import load_dotenv
 from fastapi import APIRouter, Header, HTTPException
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel
-from typing import Any, Optional
-import httpx
-import os
-from dotenv import load_dotenv
 
 from app.schemas.task_schema import Task, TaskCreate
 from app.services.createAITaskPlan import create_subtasks_with_llm
@@ -21,6 +21,26 @@ BACKEND_URL = os.getenv("TASKMASTER_BACKEND_URL")
 
 if not BACKEND_URL:
     raise RuntimeError("TASKMASTER_BACKEND_URL environment variable is not set")
+
+
+# ── Shared helpers ────────────────────────────────────────────────────────────
+
+def _resolve_tz(tz_name: str | None) -> ZoneInfo:
+    if not tz_name:
+        return ZoneInfo("UTC")
+    try:
+        return ZoneInfo(tz_name)
+    except (ZoneInfoNotFoundError, KeyError):
+        return ZoneInfo("UTC")
+
+
+async def _fetch(client: httpx.AsyncClient, url: str, headers: dict) -> httpx.Response | None:
+    """GET url, returning the response on 200 or None on error/non-200."""
+    try:
+        resp = await client.get(url, headers=headers)
+        return resp if resp.status_code == 200 else None
+    except httpx.RequestError:
+        return None
 
 
 @router.post("/plan-tasks")
@@ -106,14 +126,6 @@ async def plan_tasks(
 
 
 # ── Daily Briefing ────────────────────────────────────────────────────────────
-# The service now fetches all three data sources itself (tasks, work-blocks,
-# calendar events, notes) using the forwarded Supabase JWT.  This mirrors the
-# /schedule-task pattern and keeps the briefing server-authoritative.
-
-class DailyBriefingRequest(BaseModel):
-    """Request body is intentionally empty — all data is fetched server-side."""
-    pass
-
 
 @router.post("/daily-briefing")
 async def daily_briefing(
@@ -130,29 +142,19 @@ async def daily_briefing(
         raise HTTPException(status_code=401, detail="Authorization header required")
 
     auth_headers = {"Authorization": authorization}
-
-    try:
-        user_tz = ZoneInfo(x_timezone) if x_timezone else ZoneInfo("UTC")
-    except (ZoneInfoNotFoundError, KeyError):
-        user_tz = ZoneInfo("UTC")
-
-    async def _get(client: httpx.AsyncClient, url: str):
-        try:
-            return await client.get(url, headers=auth_headers)
-        except httpx.RequestError:
-            return None
+    user_tz = _resolve_tz(x_timezone)
 
     async with httpx.AsyncClient(timeout=15.0) as client:
         tasks_res, notes_res = await asyncio.gather(
-            _get(client, f"{BACKEND_URL}/get-tasks"),
-            _get(client, f"{BACKEND_URL}/get-notes"),
+            _fetch(client, f"{BACKEND_URL}/get-tasks", auth_headers),
+            _fetch(client, f"{BACKEND_URL}/get-notes", auth_headers),
         )
 
-    tasks: list[dict] = tasks_res.json() if tasks_res and tasks_res.status_code == 200 else []
-    notes: list[dict] = notes_res.json() if notes_res and notes_res.status_code == 200 else []
+    tasks: list[dict] = tasks_res.json() if tasks_res else []
+    notes: list[dict] = notes_res.json() if notes_res else []
 
     try:
-        result = await create_daily_briefing(
+        result = await create_daily_briefing(  # type: ignore[name-defined]  # service not yet implemented
             tasks, notes,
             timezone_name=str(user_tz),
         )
@@ -205,34 +207,23 @@ async def ai_debrief(
         raise HTTPException(status_code=401, detail="Authorization header required")
 
     auth_headers = {"Authorization": authorization}
-
-    try:
-        user_tz = ZoneInfo(x_timezone) if x_timezone else ZoneInfo("UTC")
-    except (ZoneInfoNotFoundError, KeyError):
-        user_tz = ZoneInfo("UTC")
-
-    async def _get(client: httpx.AsyncClient, url: str) -> Any | None:
-        try:
-            resp = await client.get(url, headers=auth_headers)
-            return resp if resp.status_code == 200 else None
-        except httpx.RequestError:
-            return None
+    user_tz = _resolve_tz(x_timezone)
 
     async with httpx.AsyncClient(timeout=15.0) as http:
         tasks_res, habits_res, notes_res, cal_res = await asyncio.gather(
-            _get(http, f"{BACKEND_URL}/get-tasks"),
-            _get(http, f"{BACKEND_URL}/get-habits"),
-            _get(http, f"{BACKEND_URL}/get-notes"),
-            _get(http, f"{BACKEND_URL}/get-calendar-settings"),
+            _fetch(http, f"{BACKEND_URL}/get-tasks",             auth_headers),
+            _fetch(http, f"{BACKEND_URL}/get-habits",            auth_headers),
+            _fetch(http, f"{BACKEND_URL}/get-notes",             auth_headers),
+            _fetch(http, f"{BACKEND_URL}/get-calendar-settings", auth_headers),
         )
 
-    tasks:    list[dict] = tasks_res.json()  if tasks_res  else []
-    habits:   list[dict] = habits_res.json() if habits_res else []
-    notes:    list[dict] = notes_res.json()  if notes_res  else []
-    calendar: dict | None = cal_res.json()   if cal_res    else None
+    tasks:    list[dict]  = tasks_res.json()  if tasks_res  else []
+    habits:   list[dict]  = habits_res.json() if habits_res else []
+    notes:    list[dict]  = notes_res.json()  if notes_res  else []
+    calendar: dict | None = cal_res.json()    if cal_res    else None
 
     try:
-        result = await create_ai_debrief(
+        result = await create_ai_debrief(  # type: ignore[name-defined]  # service not yet implemented
             tasks=tasks,
             habits=habits,
             notes=notes,
@@ -276,30 +267,19 @@ async def task_debrief(
         raise HTTPException(status_code=401, detail="Authorization header required")
 
     auth_headers = {"Authorization": authorization}
-
-    try:
-        user_tz = ZoneInfo(x_timezone) if x_timezone else ZoneInfo("UTC")
-    except (ZoneInfoNotFoundError, KeyError):
-        user_tz = ZoneInfo("UTC")
-
-    async def _get(client: httpx.AsyncClient, url: str) -> Any | None:
-        try:
-            resp = await client.get(url, headers=auth_headers)
-            return resp if resp.status_code == 200 else None
-        except httpx.RequestError:
-            return None
+    user_tz = _resolve_tz(x_timezone)
 
     async with httpx.AsyncClient(timeout=15.0) as http:
         tasks_res, habits_res, profile_res = await asyncio.gather(
-            _get(http, f"{BACKEND_URL}/get-tasks"),
-            _get(http, f"{BACKEND_URL}/get-habits"),
-            _get(http, f"{BACKEND_URL}/get-profile"),
+            _fetch(http, f"{BACKEND_URL}/get-tasks",   auth_headers),
+            _fetch(http, f"{BACKEND_URL}/get-habits",  auth_headers),
+            _fetch(http, f"{BACKEND_URL}/get-profile", auth_headers),
         )
 
-    tasks:  list[dict] = tasks_res.json()  if tasks_res  else []
-    habits: list[dict] = habits_res.json() if habits_res else []
-    profile: dict      = profile_res.json() if profile_res else {}
-    user_name: str     = profile.get("name", "") or ""
+    tasks:     list[dict] = tasks_res.json()   if tasks_res   else []
+    habits:    list[dict] = habits_res.json()  if habits_res  else []
+    profile:   dict       = profile_res.json() if profile_res else {}
+    user_name: str        = profile.get("name", "") or ""
 
     try:
         result = await create_task_debrief(
