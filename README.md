@@ -1,6 +1,6 @@
-# TaskMaster AI
+# kanso AI
 
-FastAPI microservice powering the AI features of TaskMaster. Deployed on [Fly.io](https://fly.io) (region: `ams`).
+FastAPI microservice powering the AI features of kanso. Deployed on [Fly.io](https://fly.io) (region: `ams`).
 
 ## Endpoints
 
