@@ -1,16 +1,29 @@
 app = "taskmaster-ai"
 primary_region = "ams"
 
+[env]
+  # Public project URL (not a secret): used to fetch the JWKS for verifying
+  # Supabase access tokens.
+  SUPABASE_URL = "https://zoayphjhnfdlttnhdpcg.supabase.co"
+
 [http_service]
 auto_start_machines = true
-auto_stop_machines = true
+auto_stop_machines = "stop"
 force_https = true
-internal_port = 8_080
-min_machines_running = 0
+internal_port = 8080
+# Keep one machine warm so the first "Find resources" click doesn't wait for a
+# cold boot on top of the LLM call.
+min_machines_running = 1
 processes = [ "app" ]
+
+  [[http_service.checks]]
+  grace_period = "10s"
+  interval = "30s"
+  method = "GET"
+  path = "/health"
+  timeout = "5s"
 
 [[vm]]
 cpu_kind = "shared"
 cpus = 1
-memory = "1gb"
-memory_mb = 256
+memory_mb = 512

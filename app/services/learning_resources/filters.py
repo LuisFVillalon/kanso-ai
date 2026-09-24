@@ -2,7 +2,7 @@
 ranked. Each filter is just a keyword list plus which fields to check it
 against — see text_matching.matches_any_field for the shared matching logic."""
 
-from typing import Any, Dict
+from typing import Any
 
 from app.services.learning_resources.text_matching import domain_of, matches_any_field
 
@@ -95,7 +95,7 @@ def is_youtube(url: str) -> bool:
     return "youtube.com" in domain or "youtu.be" in domain
 
 
-def is_sponsored(result: Dict[str, Any]) -> bool:
+def is_sponsored(result: dict[str, Any]) -> bool:
     return matches_any_field(
         result,
         url_terms=SPONSORED_URL_HINTS,
@@ -104,7 +104,7 @@ def is_sponsored(result: Dict[str, Any]) -> bool:
     )
 
 
-def is_paywalled(result: Dict[str, Any]) -> bool:
+def is_paywalled(result: dict[str, Any]) -> bool:
     return matches_any_field(
         result,
         domain_terms=PAYWALL_DOMAINS,
@@ -113,7 +113,7 @@ def is_paywalled(result: Dict[str, Any]) -> bool:
     )
 
 
-def is_course_or_tutorial(result: Dict[str, Any]) -> bool:
+def is_course_or_tutorial(result: dict[str, Any]) -> bool:
     return matches_any_field(
         result,
         domain_terms=COURSE_TUTORIAL_DOMAINS,

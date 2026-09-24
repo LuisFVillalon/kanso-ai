@@ -1,5 +1,5 @@
 import asyncio
-from typing import Any, Dict, List
+from typing import Any
 
 import httpx
 from ddgs import DDGS
@@ -17,10 +17,10 @@ MAX_CANDIDATES_PER_QUERY = 5
 MAX_RETURNED_CANDIDATES = 15
 
 DEAD_LINK_TIMEOUT = 6.0
-DEAD_LINK_USER_AGENT = "Mozilla/5.0 (compatible; TaskmasterLinkChecker/1.0)"
+DEAD_LINK_USER_AGENT = "Mozilla/5.0 (compatible; KansoLinkChecker/1.0)"
 
 
-def _search_sync(query: str, max_results: int) -> List[Dict[str, Any]]:
+def _search_sync(query: str, max_results: int) -> list[dict[str, Any]]:
     results = []
 
     with DDGS() as ddgs:
@@ -34,7 +34,7 @@ def _search_sync(query: str, max_results: int) -> List[Dict[str, Any]]:
     return results
 
 
-async def search_web(query: str, max_results: int = 8) -> List[Dict[str, Any]]:
+async def search_web(query: str, max_results: int = 8) -> list[dict[str, Any]]:
     return await asyncio.to_thread(_search_sync, query, max_results)
 
 
@@ -51,7 +51,7 @@ async def _is_url_alive(client: httpx.AsyncClient, url: str) -> bool:
         return False
 
 
-async def _filter_dead_links(candidates: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+async def _filter_dead_links(candidates: list[dict[str, Any]]) -> list[dict[str, Any]]:
     if not candidates:
         return []
 
@@ -60,10 +60,10 @@ async def _filter_dead_links(candidates: List[Dict[str, Any]]) -> List[Dict[str,
             *(_is_url_alive(client, c["url"]) for c in candidates)
         )
 
-    return [c for c, alive in zip(candidates, alive_flags) if alive]
+    return [c for c, alive in zip(candidates, alive_flags, strict=True) if alive]
 
 
-def _passes_type_filters(resource_type: str, result: Dict[str, Any]) -> bool:
+def _passes_type_filters(resource_type: str, result: dict[str, Any]) -> bool:
     if is_sponsored(result):
         return False
     if resource_type in ("article", "exercise") and is_paywalled(result):
@@ -75,7 +75,7 @@ def _passes_type_filters(resource_type: str, result: Dict[str, Any]) -> bool:
     return True
 
 
-def _deduplicate_by_url(results: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+def _deduplicate_by_url(results: list[dict[str, Any]]) -> list[dict[str, Any]]:
     seen = set()
     unique = []
 
@@ -89,7 +89,7 @@ def _deduplicate_by_url(results: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     return unique
 
 
-async def collect_candidates(plan: Dict[str, Any]) -> List[Dict[str, Any]]:
+async def collect_candidates(plan: dict[str, Any]) -> list[dict[str, Any]]:
     searches = [
         ("video", plan["video_query"] + " site:youtube.com"),
         ("article", plan["article_query"]),

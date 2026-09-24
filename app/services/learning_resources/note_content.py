@@ -1,5 +1,4 @@
 from dataclasses import dataclass, field
-from typing import List
 
 
 @dataclass
@@ -13,11 +12,11 @@ class StructuredNoteContent:
     """
 
     title: str = ""
-    headings: List[str] = field(default_factory=list)
-    highlights: List[str] = field(default_factory=list)
-    lists: List[str] = field(default_factory=list)
-    styled_text: List[str] = field(default_factory=list)
-    tables: List[str] = field(default_factory=list)
+    headings: list[str] = field(default_factory=list)
+    highlights: list[str] = field(default_factory=list)
+    lists: list[str] = field(default_factory=list)
+    styled_text: list[str] = field(default_factory=list)
+    tables: list[str] = field(default_factory=list)
     plain_text: str = ""
 
     def total_length(self) -> int:
@@ -34,7 +33,7 @@ class StructuredNoteContent:
     def to_prompt_sections(self) -> str:
         """Renders the categories as labeled sections for an LLM prompt,
         instead of flattening everything into one run-on block of text."""
-        sections: List[str] = []
+        sections: list[str] = []
 
         if self.title:
             sections.append(f"Title: {self.title}")

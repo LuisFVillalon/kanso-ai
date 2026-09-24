@@ -1,5 +1,4 @@
 import os
-from typing import Tuple
 
 from dotenv import load_dotenv
 from openai import AsyncOpenAI
@@ -18,7 +17,7 @@ GEMINI_NO_THINKING_KWARGS = {
 }
 
 
-def _build_client() -> Tuple[AsyncOpenAI, str, str]:
+def _build_client() -> tuple[AsyncOpenAI, str, str]:
     """Build the LLM client based on AI_PROVIDER (or whichever API key is available).
 
     Gemini is accessed through Google's OpenAI-compatible endpoint, so callers

@@ -9,8 +9,9 @@ once, as data, and both credibility_score() and credibility_reasons() derive
 from that single table.
 """
 
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any
 
 from app.services.learning_resources.text_matching import first_match, result_fields
 
@@ -72,16 +73,16 @@ class CredibilitySignal:
     weight: int
     # Given the result's lower-cased fields, returns the matched value (e.g.
     # the term that hit) or None if the signal didn't fire.
-    find: Callable[[Dict[str, str]], Optional[str]]
+    find: Callable[[dict[str, str]], str | None]
     # Given (matched value, fields), renders the human-readable reason.
-    describe: Callable[[str, Dict[str, str]], str]
+    describe: Callable[[str, dict[str, str]], str]
 
 
 def _term_signal(
     field_name: str,
-    terms: List[str],
+    terms: list[str],
     weight: int,
-    describe: Callable[[str, Dict[str, str]], str],
+    describe: Callable[[str, dict[str, str]], str],
 ) -> CredibilitySignal:
     return CredibilitySignal(
         weight=weight,
@@ -90,11 +91,11 @@ def _term_signal(
     )
 
 
-def _short_snippet(fields: Dict[str, str]) -> Optional[str]:
+def _short_snippet(fields: dict[str, str]) -> str | None:
     return "short" if len(fields["snippet"]) < MIN_SNIPPET_LENGTH else None
 
 
-CREDIBILITY_SIGNALS: List[CredibilitySignal] = [
+CREDIBILITY_SIGNALS: list[CredibilitySignal] = [
     _term_signal(
         "url", HIGH_TRUST_DOMAIN_HINTS, 3,
         lambda term, fields: f'domain "{fields["domain"]}" matched trust keyword "{term}"',
@@ -123,15 +124,15 @@ CREDIBILITY_SIGNALS: List[CredibilitySignal] = [
 ]
 
 
-def _fired_signals(result: Dict[str, Any]) -> List[CredibilitySignal]:
+def _fired_signals(result: dict[str, Any]) -> list[CredibilitySignal]:
     fields = result_fields(result)
     return [signal for signal in CREDIBILITY_SIGNALS if signal.find(fields) is not None]
 
 
-def credibility_score(result: Dict[str, Any]) -> int:
+def credibility_score(result: dict[str, Any]) -> int:
     return sum(signal.weight for signal in _fired_signals(result))
 
 
-def credibility_reasons(result: Dict[str, Any]) -> List[str]:
+def credibility_reasons(result: dict[str, Any]) -> list[str]:
     fields = result_fields(result)
     return [signal.describe(signal.find(fields), fields) for signal in _fired_signals(result)]

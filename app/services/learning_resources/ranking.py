@@ -2,7 +2,7 @@
 candidate per resource type is picked (highest credibility score) and given a
 plain-language explanation of why it was chosen."""
 
-from typing import Any, Dict, List
+from typing import Any
 
 from app.services.learning_resources.credibility import credibility_reasons
 
@@ -28,7 +28,7 @@ def _platform_from_domain(domain: str) -> str:
     return name.capitalize() if name else domain
 
 
-def _survival_reasons(candidate: Dict[str, Any]) -> List[str]:
+def _survival_reasons(candidate: dict[str, Any]) -> list[str]:
     """Every ranked candidate already passed collect_candidates()'s filters —
     these state that plainly, so the explanation doesn't only list the
     (possibly empty) set of credibility signals that happened to fire."""
@@ -42,18 +42,18 @@ def _survival_reasons(candidate: Dict[str, Any]) -> List[str]:
     return reasons
 
 
-def _explain_choice(candidate: Dict[str, Any]) -> str:
+def _explain_choice(candidate: dict[str, Any]) -> str:
     reasons = credibility_reasons(candidate) + _survival_reasons(candidate)
     return f"Picked {candidate['domain']}: {'; '.join(reasons)}."
 
 
 def rank_verified_resources(
-    plan: Dict[str, Any],
-    candidates: List[Dict[str, Any]],
-) -> Dict[str, Any]:
+    plan: dict[str, Any],
+    candidates: list[dict[str, Any]],
+) -> dict[str, Any]:
     topic = plan.get("topic", "")
 
-    by_type: Dict[str, List[Dict[str, Any]]] = {}
+    by_type: dict[str, list[dict[str, Any]]] = {}
     for c in candidates:
         by_type.setdefault(c["type"], []).append(c)
 

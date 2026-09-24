@@ -6,7 +6,7 @@
    resource type, with a plain-language explanation.
 """
 
-from typing import Any, Dict
+from typing import Any
 
 from app.services.learning_resources.note_content import StructuredNoteContent
 from app.services.learning_resources.planner import extract_search_plan
@@ -16,7 +16,7 @@ from app.services.learning_resources.search import collect_candidates
 MIN_CONTENT_LENGTH = 20
 
 
-async def get_learning_resources(note_content: StructuredNoteContent) -> Dict[str, Any]:
+async def get_learning_resources(note_content: StructuredNoteContent) -> dict[str, Any]:
     if note_content.total_length() < MIN_CONTENT_LENGTH:
         return {
             "topic": "",

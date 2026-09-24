@@ -2,7 +2,8 @@
 and the sponsored/paywall/course-listing filters, so each of those stays a
 short list of terms instead of its own hand-rolled string-matching logic."""
 
-from typing import Any, Dict, Iterable, Optional
+from collections.abc import Iterable
+from typing import Any
 from urllib.parse import urlparse
 
 
@@ -14,12 +15,12 @@ def domain_of(url: str) -> str:
         return ""
 
 
-def first_match(text: str, terms: Iterable[str]) -> Optional[str]:
+def first_match(text: str, terms: Iterable[str]) -> str | None:
     """Returns the first term found in text, or None."""
     return next((term for term in terms if term in text), None)
 
 
-def result_fields(result: Dict[str, Any]) -> Dict[str, str]:
+def result_fields(result: dict[str, Any]) -> dict[str, str]:
     """Lower-cased url/title/snippet/domain, computed once per lookup."""
     url = result.get("url", "").lower()
     return {
@@ -31,7 +32,7 @@ def result_fields(result: Dict[str, Any]) -> Dict[str, str]:
 
 
 def matches_any_field(
-    result: Dict[str, Any],
+    result: dict[str, Any],
     *,
     url_terms: Iterable[str] = (),
     domain_terms: Iterable[str] = (),

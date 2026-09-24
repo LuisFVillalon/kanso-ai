@@ -1,7 +1,7 @@
 import json
-from typing import Any, Dict
+from typing import Any
 
-from app.services.learning_resources.ai_client import client, MODEL_NAME, gemini_call_kwargs
+from app.services.learning_resources.ai_client import MODEL_NAME, client, gemini_call_kwargs
 from app.services.learning_resources.note_content import StructuredNoteContent
 
 SEARCH_PLAN_SCHEMA = {
@@ -30,7 +30,7 @@ SEARCH_PLAN_SCHEMA = {
 }
 
 
-async def extract_search_plan(note_content: StructuredNoteContent) -> Dict[str, Any]:
+async def extract_search_plan(note_content: StructuredNoteContent) -> dict[str, Any]:
     system = (
         "You analyze user notes and create search queries for learning resources. "
         "Do not name fake resources. Create broad but useful queries that can work "
