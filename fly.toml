@@ -1,5 +1,6 @@
 app = "taskmaster-ai"
-primary_region = "ams"
+# Ashburn, VA: close to US visitors and to the OpenAI/Gemini APIs.
+primary_region = "iad"
 
 [env]
   # Public project URL (not a secret): used to fetch the JWKS for verifying
