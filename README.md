@@ -97,7 +97,9 @@ app/
 
 ## Deployment
 
-`fly deploy`. `SUPABASE_URL` is set in `fly.toml` (it isn't a secret); the LLM keys are Fly secrets (`fly secrets set OPENAI_API_KEY=...`). One machine is kept warm to avoid cold starts.
+Merging to `main` deploys automatically: the GitHub Actions workflow (`.github/workflows/ci-cd.yml`) runs `ruff check`, `ruff format --check` and an import check on every PR and push, and on pushes to `main` runs `flyctl deploy --remote-only` once those pass. It needs the `FLY_API_TOKEN` repository secret, created with `fly tokens create deploy`. `fly deploy` still works for a manual deploy.
+
+`SUPABASE_URL` is set in `fly.toml` (it isn't a secret); the LLM keys are Fly secrets (`fly secrets set OPENAI_API_KEY=...`). One machine is kept warm to avoid cold starts.
 
 ## Author
 
