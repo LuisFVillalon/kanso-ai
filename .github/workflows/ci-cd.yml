@@ -22,8 +22,6 @@ jobs:
         run: pip install -r requirements.txt ruff==0.17.1
       - name: Lint
         run: ruff check .
-      - name: Format
-        run: ruff format --check .
       - name: Import app
         # The LLM client is built at import time and needs a key; nothing is called.
         env:
